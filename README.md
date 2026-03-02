@@ -3,8 +3,7 @@
 ## Run
 1. Install dependencies:
    - `npm install`
-2. Copy env:
-   - copy `.env.example` to `.env`
+2. Ensure `.env` exists with `VITE_API_BASE_URL`
 3. Start dev server:
    - `npm run dev`
 
