@@ -15,49 +15,52 @@ function DashboardPage() {
   });
 
   useEffect(() => {
+    let mounted = true;
     const loadSummary = async () => {
-      const [courses, attendance, results, timetable] = await Promise.allSettled([
-        api.get("/courses/items/"),
-        api.get("/attendance/records/"),
-        api.get("/results/items/"),
-        api.get("/timetable/entries/"),
-      ]);
+      try {
+        const [courses, attendance, results, timetable] = await Promise.allSettled([
+          api.get("/courses/items/"),
+          api.get("/attendance/records/"),
+          api.get("/results/items/"),
+          api.get("/timetable/entries/"),
+        ]);
 
-      setSummary({
-        courses: courses.status === "fulfilled" ? courses.value.data.length : 0,
-        attendance:
-          attendance.status === "fulfilled" ? attendance.value.data.length : 0,
-        results: results.status === "fulfilled" ? results.value.data.length : 0,
-        timetable:
-          timetable.status === "fulfilled" ? timetable.value.data.length : 0,
-      });
+        if (!mounted) return;
+
+        setSummary({
+          courses: courses.status === "fulfilled" ? courses.value.data.length : 0,
+          attendance: attendance.status === "fulfilled" ? attendance.value.data.length : 0,
+          results: results.status === "fulfilled" ? results.value.data.length : 0,
+          timetable: timetable.status === "fulfilled" ? timetable.value.data.length : 0,
+        });
+      } catch (err) {
+        // ignore
+      }
     };
 
     loadSummary();
+    return () => (mounted = false);
   }, []);
+
+  const roleLabel = user
+    ? { student: "Student", teacher: "Teacher", registrar: "Registrar", admin: "Admin" }[user.role] || user.role
+    : "Not signed in";
 
   return (
     <div className="page">
       <header className="header">
         <div>
-          <h1>College ERP</h1>
+          <h1>{user?.role ? `${roleLabel} Dashboard` : "Dashboard"}</h1>
           <p>
-            Logged in as <strong>{user?.username}</strong> (
-            {user
-              ? {
-                  student: "Student",
-                  teacher: "Teacher",
-                  registrar: "Registrar",
-                  admin: "Admin",
-                }[user.role] || user.role
-              : "Not signed in"
-            })
+            Welcome, <strong>{user?.first_name || user?.username}</strong> — {roleLabel}
           </p>
         </div>
-        <button onClick={signOut}>Logout</button>
+        <div className="header-actions">
+          <button onClick={signOut}>Logout</button>
+        </div>
       </header>
 
-      <section className="grid">
+      <section className="top-cards">
         <article className="card">
           <h3>Courses</h3>
           <p>{summary.courses}</p>
@@ -76,39 +79,56 @@ function DashboardPage() {
         </article>
       </section>
 
-      <section className="actions">
-        <h2>Actions</h2>
+      <section className="layout-two">
+        <div className="left-panel">
+          <section className="panel card">
+            <h2>Quick Actions</h2>
+            {user?.role === "registrar" && (
+              <div className="action-list">
+                <button onClick={() => navigate("/users/create?role=student")}>Register Student</button>
+                <button onClick={() => navigate("/users/create?role=teacher")}>Register Teacher</button>
+                <button onClick={() => navigate("/timetable/create")}>Create Timetable</button>
+              </div>
+            )}
 
-        {user?.role === "registrar" && (
-          <div className="action-list">
-            <button onClick={() => navigate('/users/create?role=student')}>Register Student</button>
-            <button onClick={() => navigate('/users/create?role=teacher')}>Register Teacher</button>
-            <button onClick={() => navigate('/timetable/create')}>Create Timetable</button>
-          </div>
-        )}
+            {user?.role === "admin" && (
+              <div className="action-list">
+                <button onClick={() => navigate("/admin/monitor")}>Monitor System</button>
+                <button onClick={() => navigate("/admin/config")}>Configure System</button>
+              </div>
+            )}
 
-        {user?.role === "admin" && (
-          <div className="action-list">
-            <button onClick={() => navigate('/admin/monitor')}>Monitor System</button>
-            <button onClick={() => navigate('/admin/config')}>Configure System</button>
-          </div>
-        )}
+            {user?.role === "teacher" && (
+              <div className="action-list">
+                <button onClick={() => navigate("/teacher/manage")}>Enter Attendance</button>
+                <button onClick={() => navigate("/teacher/manage")}>Enter Grades</button>
+              </div>
+            )}
 
-        {user?.role === "teacher" && (
-          <div className="action-list">
-            <button onClick={() => navigate('/timetable/view')}>View Timetable</button>
-            <button onClick={() => navigate('/attendance/mark')}>Enter Attendance</button>
-            <button onClick={() => navigate('/results/enter')}>Enter Grades</button>
-          </div>
-        )}
+            {user?.role === "student" && (
+              <div className="action-list">
+                <button onClick={() => navigate("/student/view")}>View Attendance</button>
+                <button onClick={() => navigate("/student/view")}>View Results</button>
+                <button onClick={() => navigate("/student/view")}>View Timetable</button>
+              </div>
+            )}
+          </section>
+        </div>
 
-        {user?.role === "student" && (
-          <div className="action-list">
-            <button onClick={() => navigate('/attendance/view')}>View Attendance</button>
-            <button onClick={() => navigate('/timetable/view')}>View Timetable</button>
-            <button onClick={() => navigate('/results/view')}>View Results</button>
-          </div>
-        )}
+        <div className="right-panel">
+          <section className="panel card">
+            <h2>Pending Tasks</h2>
+            <ul className="pending-list">
+              <li>No pending tasks</li>
+            </ul>
+          </section>
+          <section className="panel card">
+            <h2>Recent Activity</h2>
+            <ul className="recent-list">
+              <li>System running</li>
+            </ul>
+          </section>
+        </div>
       </section>
     </div>
   );
