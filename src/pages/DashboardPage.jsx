@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import { api } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 
 function DashboardPage() {
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const [summary, setSummary] = useState({
     courses: 0,
     attendance: 0,
@@ -40,7 +42,16 @@ function DashboardPage() {
         <div>
           <h1>College ERP</h1>
           <p>
-            Logged in as <strong>{user?.username}</strong> ({user?.role})
+            Logged in as <strong>{user?.username}</strong> (
+            {user
+              ? {
+                  student: "Student",
+                  teacher: "Teacher",
+                  registrar: "Registrar",
+                  admin: "Admin",
+                }[user.role] || user.role
+              : "Not signed in"
+            })
           </p>
         </div>
         <button onClick={signOut}>Logout</button>
@@ -63,6 +74,41 @@ function DashboardPage() {
           <h3>Timetable Entries</h3>
           <p>{summary.timetable}</p>
         </article>
+      </section>
+
+      <section className="actions">
+        <h2>Actions</h2>
+
+        {user?.role === "registrar" && (
+          <div className="action-list">
+            <button onClick={() => navigate('/users/create?role=student')}>Register Student</button>
+            <button onClick={() => navigate('/users/create?role=teacher')}>Register Teacher</button>
+            <button onClick={() => navigate('/timetable/create')}>Create Timetable</button>
+          </div>
+        )}
+
+        {user?.role === "admin" && (
+          <div className="action-list">
+            <button onClick={() => navigate('/admin/monitor')}>Monitor System</button>
+            <button onClick={() => navigate('/admin/config')}>Configure System</button>
+          </div>
+        )}
+
+        {user?.role === "teacher" && (
+          <div className="action-list">
+            <button onClick={() => navigate('/timetable/view')}>View Timetable</button>
+            <button onClick={() => navigate('/attendance/mark')}>Enter Attendance</button>
+            <button onClick={() => navigate('/results/enter')}>Enter Grades</button>
+          </div>
+        )}
+
+        {user?.role === "student" && (
+          <div className="action-list">
+            <button onClick={() => navigate('/attendance/view')}>View Attendance</button>
+            <button onClick={() => navigate('/timetable/view')}>View Timetable</button>
+            <button onClick={() => navigate('/results/view')}>View Results</button>
+          </div>
+        )}
       </section>
     </div>
   );
