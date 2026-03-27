@@ -3,54 +3,40 @@ import { NavLink } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 export default function Sidebar() {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
 
-  const common = [
-    { to: "/", label: "Dashboard" },
-  ];
-
-  const menus = {
-    admin: [
-      { to: "/admin/config", label: "System Settings" },
-      { to: "/admin/monitor", label: "Monitoring" },
-    ],
-    registrar: [
-      { to: "/users/create", label: "Register Student" },
-      { to: "/users/create?role=teacher", label: "Register Teacher" },
-      { to: "/timetable/create", label: "Timetable" },
-    ],
-    teacher: [
-      { to: "/teacher/manage", label: "Mark Attendance" },
-      { to: "/teacher/manage", label: "Enter Grades" },
-      { to: "/teacher/manage", label: "My Courses" },
-    ],
-    student: [
-      { to: "/student/view", label: "Attendance" },
-      { to: "/student/view", label: "Results" },
-      { to: "/student/view", label: "Timetable" },
-    ],
+  const capability = {
+    admin: ["Configure system", "Manage roles", "Monitor platform", "Recovery planning"],
+    registrar: ["Register users", "Manage status", "Create courses", "Publish timetable"],
+    teacher: ["Record attendance", "Enter results", "View teaching load", "Class reports"],
+    student: ["View profile", "Track attendance", "View grades", "Check timetable"],
   };
-
-  const role = user?.role || "";
 
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">College ERP</div>
       <nav>
         <ul>
-          {common.map((m) => (
-            <li key={m.to}>
-              <NavLink to={m.to} className={({isActive}) => isActive? 'active':''}>{m.label}</NavLink>
-            </li>
-          ))}
-
-          {(menus[role] || []).map((m) => (
-            <li key={m.to}>
-              <NavLink to={m.to} className={({isActive}) => isActive? 'active':''}>{m.label}</NavLink>
-            </li>
-          ))}
+          <li>
+            <NavLink to="/" className={({ isActive }) => (isActive ? "active" : "")}>
+              Dashboard
+            </NavLink>
+          </li>
         </ul>
       </nav>
+
+      <div className="sidebar-role">
+        <h4>{(user?.role || "").toUpperCase()}</h4>
+        <ul>
+          {(capability[user?.role] || []).map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      </div>
+
+      <button type="button" className="sidebar-logout" onClick={signOut}>
+        Logout
+      </button>
     </aside>
   );
 }
