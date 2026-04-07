@@ -703,3 +703,414 @@ button {
     grid-template-columns: 1fr;
   }
 }
+
+.role-page {
+  max-width: 1160px;
+  padding-top: 1.2rem;
+}
+
+.role-page-header {
+  border-radius: 16px;
+  border: 1px solid #d7dfef;
+  background:
+    radial-gradient(circle at 85% 20%, rgba(255, 255, 255, 0.56), rgba(255, 255, 255, 0) 38%),
+    linear-gradient(135deg, #f2f6ff, #e8edf8 58%, #dce7ff);
+  padding: 1.1rem 1.2rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.role-page-kicker {
+  margin: 0;
+  color: #334155;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.role-page-header h1 {
+  margin: 0.25rem 0;
+  font-size: clamp(1.35rem, 2.3vw, 2rem);
+  color: #0f172a;
+}
+
+.role-page-subtitle {
+  margin: 0;
+  color: #334155;
+  max-width: 640px;
+}
+
+.role-page-link {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  border: 1px solid #cad8f7;
+  color: #1e3a8a;
+  background: #f8fbff;
+  padding: 0.5rem 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.student-accent {
+  border-color: #cfd8eb;
+  background:
+    radial-gradient(circle at 85% 10%, rgba(217, 240, 255, 0.8), rgba(217, 240, 255, 0) 42%),
+    linear-gradient(135deg, #f8fbff, #edf4ff 60%, #e0edff);
+}
+
+.teacher-accent {
+  border-color: #cae6e6;
+  background:
+    radial-gradient(circle at 85% 10%, rgba(216, 255, 247, 0.8), rgba(216, 255, 247, 0) 42%),
+    linear-gradient(135deg, #f6fffc, #e8faf5 58%, #dbf7f0);
+}
+
+.registrar-accent {
+  border-color: #f3dcbf;
+  background:
+    radial-gradient(circle at 85% 10%, rgba(255, 235, 206, 0.8), rgba(255, 235, 206, 0) 42%),
+    linear-gradient(135deg, #fffaf2, #fff2de 58%, #ffe7c2);
+}
+
+.admin-accent {
+  border-color: #d7d4ec;
+  background:
+    radial-gradient(circle at 85% 10%, rgba(234, 231, 255, 0.8), rgba(234, 231, 255, 0) 42%),
+    linear-gradient(135deg, #f8f7ff, #eeecff 58%, #e6e3fa);
+}
+
+.role-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 0.9rem;
+}
+
+.role-metric-card {
+  border: 1px solid #dfe5ef;
+  border-radius: 12px;
+  background: #fbfcff;
+  padding: 0.8rem;
+}
+
+.role-metric-card h3 {
+  margin: 0;
+  font-size: 1.6rem;
+  color: #0f172a;
+}
+
+.role-metric-card p {
+  margin: 0.2rem 0 0;
+  color: #475569;
+}
+
+.role-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem;
+}
+
+.role-table-card,
+.role-note-card {
+  background: #ffffff;
+  border: 1px solid #dde4ef;
+  border-radius: 14px;
+  padding: 0.9rem;
+  margin-bottom: 0.9rem;
+}
+
+.role-table-card h2,
+.role-note-card h2,
+.role-note-card h3 {
+  margin: 0 0 0.75rem;
+  color: #0f172a;
+}
+
+.role-note-card ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: #334155;
+}
+
+.role-note-card li {
+  margin-bottom: 0.45rem;
+}
+
+.role-note-card label {
+  margin-bottom: 0.7rem;
+  color: #1e293b;
+}
+
+@media (max-width: 980px) {
+  .role-metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .role-two-col {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 620px) {
+  .role-metric-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .role-page-header {
+    flex-direction: column;
+  }
+}
+
+.role-workspace {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0) 40%),
+    linear-gradient(180deg, #eef2ff 0%, #f5f7fb 40%, #eef2f7 100%);
+}
+
+.role-workspace-glow {
+  position: absolute;
+  width: 620px;
+  height: 620px;
+  border-radius: 50%;
+  filter: blur(34px);
+  top: -190px;
+  right: -130px;
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.student-theme .role-workspace-glow {
+  background: radial-gradient(circle, #b8d4ff 0%, #b8d4ff 25%, rgba(184, 212, 255, 0) 72%);
+}
+
+.teacher-theme .role-workspace-glow {
+  background: radial-gradient(circle, #b3f0db 0%, #b3f0db 25%, rgba(179, 240, 219, 0) 72%);
+}
+
+.registrar-theme .role-workspace-glow {
+  background: radial-gradient(circle, #ffd8b6 0%, #ffd8b6 25%, rgba(255, 216, 182, 0) 72%);
+}
+
+.admin-theme .role-workspace-glow {
+  background: radial-gradient(circle, #d7ceff 0%, #d7ceff 25%, rgba(215, 206, 255, 0) 72%);
+}
+
+.role-context-strip {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+  border: 1px solid #dde3f2;
+  background: rgba(255, 255, 255, 0.76);
+  box-shadow: 0 10px 26px rgba(31, 41, 55, 0.08);
+  border-radius: 12px;
+  padding: 0.6rem 0.75rem;
+  margin-bottom: 0.9rem;
+}
+
+.context-pill {
+  background: #0f172a;
+  color: #ffffff;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 700;
+  padding: 0.27rem 0.62rem;
+}
+
+.context-meta {
+  background: #f6f8ff;
+  border: 1px solid #dce3f9;
+  color: #334155;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  padding: 0.27rem 0.62rem;
+}
+
+.elevated-card {
+  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.06);
+}
+
+.role-metric-card {
+  background: linear-gradient(165deg, #ffffff, #f8fbff);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+}
+
+.role-metric-card h3 {
+  letter-spacing: -0.02em;
+}
+
+.role-table-card,
+.role-note-card {
+  backdrop-filter: blur(3px);
+}
+
+.polished-form label {
+  margin-bottom: 0;
+  color: #0f172a;
+  font-weight: 600;
+  font-size: 0.88rem;
+}
+
+.polished-form input,
+.polished-form select {
+  background: #fcfdff;
+  border: 1px solid #cfd9ee;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.polished-form input:focus,
+.polished-form select:focus {
+  outline: 2px solid rgba(59, 130, 246, 0.3);
+  border-color: #2563eb;
+}
+
+.polished-form button,
+.role-page-link,
+.tiny-btn {
+  transition: transform 0.14s ease, box-shadow 0.14s ease;
+}
+
+.polished-form button:hover,
+.role-page-link:hover,
+.tiny-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 7px 16px rgba(37, 99, 235, 0.25);
+}
+
+.table-wrap table {
+  min-width: 540px;
+}
+
+.table-wrap thead th {
+  background: #f3f6ff;
+  color: #1e293b;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.table-wrap tbody tr:nth-child(even) {
+  background: #fbfdff;
+}
+
+.table-wrap tbody tr:hover {
+  background: #f2f7ff;
+}
+
+.table-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #e9f3ff;
+  border: 1px solid #c8dcff;
+  color: #0f3e8a;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  text-transform: capitalize;
+  padding: 0.14rem 0.55rem;
+}
+
+.role-workspace .table-wrap {
+  border: 1px solid #d8e1f2;
+  border-radius: 12px;
+  overflow: auto;
+  background: #ffffff;
+}
+
+.role-workspace .table-wrap .pro-table {
+  width: 100%;
+  min-width: 680px;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.role-workspace .table-wrap .pro-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: linear-gradient(180deg, #f6f9ff, #eef3ff);
+  color: #1f2a44;
+  font-size: 0.76rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 800;
+  padding: 0.75rem 0.8rem;
+  border-bottom: 1px solid #d8e1f2;
+}
+
+.role-workspace .table-wrap .pro-table td {
+  font-size: 0.89rem;
+  color: #243045;
+  padding: 0.72rem 0.8rem;
+  border-bottom: 1px solid #e8edf7;
+  vertical-align: middle;
+}
+
+.role-workspace .table-wrap .pro-table tbody tr:nth-child(odd) {
+  background: #ffffff;
+}
+
+.role-workspace .table-wrap .pro-table tbody tr:nth-child(even) {
+  background: #fbfdff;
+}
+
+.role-workspace .table-wrap .pro-table tbody tr:hover {
+  background: #eef5ff;
+}
+
+.role-workspace .table-wrap .pro-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.role-workspace .table-wrap .pro-table tbody td:first-child {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.role-workspace .table-wrap .pro-table tbody td[colspan] {
+  text-align: center;
+  color: #5b667a;
+  font-style: italic;
+  padding: 1rem 0.8rem;
+}
+
+.role-workspace .table-wrap::-webkit-scrollbar {
+  height: 10px;
+}
+
+.role-workspace .table-wrap::-webkit-scrollbar-thumb {
+  background: #c6d3ef;
+  border-radius: 999px;
+}
+
+.role-workspace .table-wrap::-webkit-scrollbar-track {
+  background: #edf2fb;
+}
+
+@media (max-width: 820px) {
+  .role-context-strip {
+    gap: 0.35rem;
+    padding: 0.5rem;
+  }
+
+  .context-meta,
+  .context-pill {
+    font-size: 0.7rem;
+  }
+
+  .role-workspace .table-wrap .pro-table {
+    min-width: 560px;
+  }
+}
