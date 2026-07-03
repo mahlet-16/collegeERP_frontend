@@ -30,6 +30,12 @@ export function AuthProvider({ children }) {
     initialize();
   }, []);
 
+  useEffect(() => {
+    const expireSession = () => setUser(null);
+    window.addEventListener("erp:session-expired", expireSession);
+    return () => window.removeEventListener("erp:session-expired", expireSession);
+  }, []);
+
   const signIn = async (username, password) => {
     const tokens = await login(username, password);
     localStorage.setItem("access_token", tokens.access);

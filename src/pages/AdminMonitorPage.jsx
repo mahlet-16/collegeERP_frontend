@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
-import { api } from "../api/client";
+import { api, getList } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 
 export default function AdminMonitorPage() {
@@ -14,6 +14,7 @@ export default function AdminMonitorPage() {
     attendance: [],
     results: [],
     timetable: [],
+    auditLogs: [],
   });
 
   useEffect(() => {
@@ -23,23 +24,25 @@ export default function AdminMonitorPage() {
       setLoading(true);
       setError("");
 
-      const [usersRes, coursesRes, attendanceRes, resultsRes, timetableRes] = await Promise.allSettled([
+      const [usersRes, coursesRes, attendanceRes, resultsRes, timetableRes, auditLogsRes] = await Promise.allSettled([
         api.get("/users/list/"),
         api.get("/courses/items/"),
         api.get("/attendance/records/"),
         api.get("/results/items/"),
         api.get("/timetable/entries/"),
+        api.get("/users/audit-logs/"),
       ]);
 
       setRecords({
-        users: usersRes.status === "fulfilled" ? usersRes.value.data : [],
-        courses: coursesRes.status === "fulfilled" ? coursesRes.value.data : [],
-        attendance: attendanceRes.status === "fulfilled" ? attendanceRes.value.data : [],
-        results: resultsRes.status === "fulfilled" ? resultsRes.value.data : [],
-        timetable: timetableRes.status === "fulfilled" ? timetableRes.value.data : [],
+        users: usersRes.status === "fulfilled" ? getList(usersRes.value.data) : [],
+        courses: coursesRes.status === "fulfilled" ? getList(coursesRes.value.data) : [],
+        attendance: attendanceRes.status === "fulfilled" ? getList(attendanceRes.value.data) : [],
+        results: resultsRes.status === "fulfilled" ? getList(resultsRes.value.data) : [],
+        timetable: timetableRes.status === "fulfilled" ? getList(timetableRes.value.data) : [],
+        auditLogs: auditLogsRes.status === "fulfilled" ? getList(auditLogsRes.value.data) : [],
       });
 
-      if ([usersRes, coursesRes, attendanceRes, resultsRes, timetableRes].every((entry) => entry.status === "rejected")) {
+      if ([usersRes, coursesRes, attendanceRes, resultsRes, timetableRes, auditLogsRes].every((entry) => entry.status === "rejected")) {
         setError("Could not load system monitoring feeds.");
       }
 
@@ -107,21 +110,21 @@ export default function AdminMonitorPage() {
           </article>
 
           <article className="role-table-card elevated-card">
-            <h2>Recent User States</h2>
+            <h2>Recent Audit Logs</h2>
             <div className="table-wrap">
               <table className="pro-table">
                 <thead>
-                  <tr><th>User</th><th>Role</th><th>Status</th></tr>
+                  <tr><th>Action</th><th>Actor</th><th>Object</th></tr>
                 </thead>
                 <tbody>
-                  {records.users.slice(0, 15).map((entry) => (
+                  {records.auditLogs.slice(0, 15).map((entry) => (
                     <tr key={entry.id}>
-                      <td>{entry.username}</td>
-                      <td>{entry.role}</td>
-                      <td>{entry.is_active ? "Active" : "Inactive"}</td>
+                      <td>{entry.action}</td>
+                      <td>{entry.actor_name || "system"}</td>
+                      <td>{entry.model_name} #{entry.object_id}</td>
                     </tr>
                   ))}
-                  {!records.users.length ? <tr><td colSpan="3">No user telemetry available.</td></tr> : null}
+                  {!records.auditLogs.length ? <tr><td colSpan="3">No audit logs available.</td></tr> : null}
                 </tbody>
               </table>
             </div>

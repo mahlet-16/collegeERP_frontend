@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 
-import { api } from "../api/client";
+import { api, getList } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 
 export default function CreateTimetablePage() {
@@ -20,8 +20,8 @@ export default function CreateTimetablePage() {
         api.get("/courses/items/"),
         api.get("/timetable/entries/"),
       ]);
-      setCourses(coursesRes.status === "fulfilled" ? coursesRes.value.data : []);
-      setEntries(entriesRes.status === "fulfilled" ? entriesRes.value.data : []);
+      setCourses(coursesRes.status === "fulfilled" ? getList(coursesRes.value.data) : []);
+      setEntries(entriesRes.status === "fulfilled" ? getList(entriesRes.value.data) : []);
       if (coursesRes.status === "rejected" && entriesRes.status === "rejected") {
         setError("Could not load timetable resources.");
       }
@@ -31,7 +31,7 @@ export default function CreateTimetablePage() {
   }, []);
 
   if (!user) return <p>Please sign in.</p>;
-  if (!["registrar", "admin"].includes(user.role)) return <p>Not authorized.</p>;
+  if (user.role !== "registrar") return <p>Not authorized.</p>;
   if (loading) return <div className="page role-page"><p>Loading timetable tools...</p></div>;
 
   const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
@@ -56,7 +56,7 @@ export default function CreateTimetablePage() {
       setSuccess('Timetable entry created successfully.');
       setForm({ term: "", day: "monday", start_time: "08:00", end_time: "09:00", room: "", course: "", published: true });
       const refreshed = await api.get("/timetable/entries/");
-      setEntries(refreshed.data);
+      setEntries(getList(refreshed.data));
     } catch (err) {
       setError(typeof err.response?.data === "string" ? err.response.data : "Failed to create timetable entry.");
     }

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 
-import { api } from "../api/client";
+import { api, getList } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 
 function scoreToGrade(mark) {
@@ -21,39 +21,46 @@ export default function TeacherManagePage() {
   const [enrollments, setEnrollments] = useState([]);
   const [attendanceRecords, setAttendanceRecords] = useState([]);
   const [pendingResults, setPendingResults] = useState([]);
-  const [form, setForm] = useState({ student: "", course: "", date: "", status: "present" });
-  const [resultForm, setResultForm] = useState({ student: "", course: "", mark: "", term: "" });
+  const [timetable, setTimetable] = useState([]);
+  const [form, setForm] = useState({ student: "", course: "", date: "", status: "present", is_draft: false });
+  const [resultForm, setResultForm] = useState({ student: "", course: "", mark: "", term: "", is_draft: false });
 
   const loadData = async () => {
     if (!user) return;
     setLoading(true);
     setNotice("");
 
-    const [coursesRes, enrollmentsRes, attendanceRes, resultsRes] = await Promise.allSettled([
+    const [coursesRes, enrollmentsRes, attendanceRes, resultsRes, timetableRes] = await Promise.allSettled([
       api.get("/courses/items/"),
       api.get("/courses/enrollments/"),
       api.get("/attendance/records/"),
       api.get("/results/items/"),
+      api.get("/timetable/entries/"),
     ]);
 
-    const allCourses = coursesRes.status === "fulfilled" ? coursesRes.value.data : [];
+    const allCourses = coursesRes.status === "fulfilled" ? getList(coursesRes.value.data) : [];
     const mine = allCourses.filter((entry) => entry.teacher === user.id);
     const mineIds = new Set(mine.map((entry) => entry.id));
 
     setCourses(mine);
     setEnrollments(
       enrollmentsRes.status === "fulfilled"
-        ? enrollmentsRes.value.data.filter((entry) => mineIds.has(entry.course))
+        ? getList(enrollmentsRes.value.data).filter((entry) => mineIds.has(entry.course))
         : []
     );
     setAttendanceRecords(
       attendanceRes.status === "fulfilled"
-        ? attendanceRes.value.data.filter((entry) => mineIds.has(entry.course))
+        ? getList(attendanceRes.value.data).filter((entry) => mineIds.has(entry.course))
         : []
     );
     setPendingResults(
       resultsRes.status === "fulfilled"
-        ? resultsRes.value.data.filter((entry) => mineIds.has(entry.course) && !entry.published)
+        ? getList(resultsRes.value.data).filter((entry) => mineIds.has(entry.course) && !entry.published)
+        : []
+    );
+    setTimetable(
+      timetableRes.status === "fulfilled"
+        ? getList(timetableRes.value.data).filter((entry) => mineIds.has(entry.course))
         : []
     );
 
@@ -91,7 +98,7 @@ export default function TeacherManagePage() {
     setNotice("");
     try {
       await api.post("/attendance/records/", form);
-      setForm({ student: "", course: "", date: "", status: "present" });
+      setForm({ student: "", course: "", date: "", status: "present", is_draft: false });
       setNotice("Attendance recorded successfully.");
       await loadData();
     } catch {
@@ -111,9 +118,10 @@ export default function TeacherManagePage() {
         grade,
         gpa,
         term: resultForm.term,
+        is_draft: resultForm.is_draft,
         published: false,
       });
-      setResultForm({ student: "", course: "", mark: "", term: "" });
+      setResultForm({ student: "", course: "", mark: "", term: "", is_draft: false });
       setNotice("Result submitted for registrar/admin publication.");
       await loadData();
     } catch {
@@ -174,6 +182,13 @@ export default function TeacherManagePage() {
                   <option value="excused">Excused</option>
                 </select>
               </label>
+              <label>
+                Draft
+                <select name="is_draft" value={String(form.is_draft)} onChange={(e) => setForm({ ...form, is_draft: e.target.value === "true" })}>
+                  <option value="false">Final</option>
+                  <option value="true">Draft</option>
+                </select>
+              </label>
               <button type="submit">Record Attendance</button>
             </form>
           </article>
@@ -223,7 +238,14 @@ export default function TeacherManagePage() {
                   required
                 />
               </label>
-              <button type="submit">Submit Result</button>
+              <label>
+                Draft
+                <select value={String(resultForm.is_draft)} onChange={(e) => setResultForm({ ...resultForm, is_draft: e.target.value === "true" })}>
+                  <option value="false">Submit for Publication</option>
+                  <option value="true">Save Draft</option>
+                </select>
+              </label>
+              <button type="submit">{resultForm.is_draft ? "Save Draft" : "Submit Result"}</button>
             </form>
           </article>
         </section>
@@ -233,7 +255,7 @@ export default function TeacherManagePage() {
           <div className="table-wrap">
             <table className="pro-table">
               <thead>
-                <tr><th>Student</th><th>Course</th><th>Term</th><th>Grade</th><th>Mark</th></tr>
+                <tr><th>Student</th><th>Course</th><th>Term</th><th>Grade</th><th>Mark</th><th>Status</th></tr>
               </thead>
               <tbody>
                 {pendingResults.map((entry) => (
@@ -243,9 +265,33 @@ export default function TeacherManagePage() {
                     <td>{entry.term}</td>
                     <td>{entry.grade}</td>
                     <td>{entry.mark}</td>
+                    <td>{entry.is_draft ? "Draft" : "Submitted"}</td>
                   </tr>
                 ))}
-                {!pendingResults.length ? <tr><td colSpan="5">No pending results at the moment.</td></tr> : null}
+                {!pendingResults.length ? <tr><td colSpan="6">No pending results at the moment.</td></tr> : null}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section className="role-table-card elevated-card">
+          <h2>Assigned Timetable</h2>
+          <div className="table-wrap">
+            <table className="pro-table">
+              <thead>
+                <tr><th>Term</th><th>Day</th><th>Time</th><th>Course</th><th>Room</th></tr>
+              </thead>
+              <tbody>
+                {timetable.map((entry) => (
+                  <tr key={entry.id}>
+                    <td>{entry.term}</td>
+                    <td>{entry.day}</td>
+                    <td>{entry.start_time} - {entry.end_time}</td>
+                    <td>{entry.course_code}</td>
+                    <td>{entry.room}</td>
+                  </tr>
+                ))}
+                {!timetable.length ? <tr><td colSpan="5">No assigned timetable is available.</td></tr> : null}
               </tbody>
             </table>
           </div>

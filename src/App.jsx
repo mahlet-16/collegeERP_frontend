@@ -3,10 +3,12 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import AdminConfigPage from "./pages/AdminConfigPage";
 import AdminMonitorPage from "./pages/AdminMonitorPage";
 import CreateTimetablePage from "./pages/CreateTimetablePage";
+import ExamSchedulePage from "./pages/ExamSchedulePage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import DashboardPage from "./pages/DashboardPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterUserPage from "./pages/RegisterUserPage";
+import RegistrarAcademicPage from "./pages/RegistrarAcademicPage";
 import StudentViewPage from "./pages/StudentViewPage";
 import TeacherManagePage from "./pages/TeacherManagePage";
 
@@ -25,7 +27,7 @@ function App() {
       <Route
         path="/student/view"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute roles={["student"]}>
             <StudentViewPage />
           </ProtectedRoute>
         }
@@ -33,7 +35,7 @@ function App() {
       <Route
         path="/teacher/manage"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute roles={["teacher"]}>
             <TeacherManagePage />
           </ProtectedRoute>
         }
@@ -41,7 +43,7 @@ function App() {
       <Route
         path="/registrar/register"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute roles={["registrar"]}>
             <RegisterUserPage />
           </ProtectedRoute>
         }
@@ -49,15 +51,31 @@ function App() {
       <Route
         path="/registrar/timetable"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute roles={["registrar"]}>
             <CreateTimetablePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/registrar/exams"
+        element={
+          <ProtectedRoute roles={["registrar"]}>
+            <ExamSchedulePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/registrar/academics"
+        element={
+          <ProtectedRoute roles={["registrar"]}>
+            <RegistrarAcademicPage />
           </ProtectedRoute>
         }
       />
       <Route
         path="/admin/config"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute roles={["admin"]}>
             <AdminConfigPage />
           </ProtectedRoute>
         }
@@ -65,7 +83,7 @@ function App() {
       <Route
         path="/admin/monitor"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute roles={["admin"]}>
             <AdminMonitorPage />
           </ProtectedRoute>
         }

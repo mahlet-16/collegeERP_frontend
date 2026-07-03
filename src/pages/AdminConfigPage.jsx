@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
-import { api } from "../api/client";
+import { api, getList } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 
 export default function AdminConfigPage() {
@@ -9,25 +9,21 @@ export default function AdminConfigPage() {
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState("");
   const [users, setUsers] = useState([]);
-  const [settings, setSettings] = useState(() => {
-    const saved = localStorage.getItem("admin_settings");
-    if (!saved) {
-      return { notifications: true, strictSecurity: true, maintenanceMode: false };
-    }
-    try {
-      return JSON.parse(saved);
-    } catch {
-      return { notifications: true, strictSecurity: true, maintenanceMode: false };
-    }
-  });
+  const [settings, setSettings] = useState({ notifications: true, strictSecurity: true, maintenanceMode: false });
 
   const loadUsers = async () => {
     if (!user) return;
     setLoading(true);
     setNotice("");
     try {
-      const response = await api.get("/users/list/");
-      setUsers(response.data);
+      const [usersResponse, settingsResponse] = await Promise.allSettled([
+        api.get("/users/list/"),
+        api.get("/users/settings/portal/"),
+      ]);
+      setUsers(usersResponse.status === "fulfilled" ? getList(usersResponse.value.data) : []);
+      if (settingsResponse.status === "fulfilled") {
+        setSettings({ ...settings, ...settingsResponse.value.data.value });
+      }
     } catch {
       setNotice("Could not load users for management.");
       setUsers([]);
@@ -40,9 +36,19 @@ export default function AdminConfigPage() {
     loadUsers();
   }, [user]);
 
-  const saveSettings = () => {
-    localStorage.setItem("admin_settings", JSON.stringify(settings));
-    setNotice("System settings saved locally.");
+  const saveSettings = async () => {
+    setNotice("");
+    try {
+      await api.patch("/users/settings/portal/", { key: "portal", value: settings });
+      setNotice("System settings saved.");
+    } catch (error) {
+      if (error.response?.status === 404) {
+        await api.post("/users/settings/", { key: "portal", value: settings });
+        setNotice("System settings created.");
+        return;
+      }
+      setNotice("Could not save system settings.");
+    }
   };
 
   const updateManagedUser = async (target, patchData) => {

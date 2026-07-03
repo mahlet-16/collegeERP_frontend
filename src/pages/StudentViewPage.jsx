@@ -1,8 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
-import { api } from "../api/client";
+import { api, getList } from "../api/client";
 import { useAuth } from "../context/AuthContext";
+
+function downloadCsv(filename, rows) {
+  const headers = ["Term", "Course", "Grade", "Mark", "GPA"];
+  const content = [headers.join(","), ...rows.map((row) => [row.term, row.course_code, row.grade, row.mark, row.gpa].join(","))].join("\n");
+  const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
 
 export default function StudentViewPage() {
   const { user } = useAuth();
@@ -12,6 +24,8 @@ export default function StudentViewPage() {
   const [results, setResults] = useState([]);
   const [timetable, setTimetable] = useState([]);
   const [enrollments, setEnrollments] = useState([]);
+  const [programs, setPrograms] = useState([]);
+  const [profile, setProfile] = useState({ student_id: "", level: "", address: "", program: "" });
 
   useEffect(() => {
     if (!user) return;
@@ -20,19 +34,30 @@ export default function StudentViewPage() {
       setLoading(true);
       setError("");
 
-      const [attendanceRes, resultsRes, timetableRes, enrollmentRes] = await Promise.allSettled([
+      const [attendanceRes, resultsRes, timetableRes, enrollmentRes, programsRes, profileRes] = await Promise.allSettled([
         api.get("/attendance/records/"),
         api.get("/results/items/"),
         api.get("/timetable/entries/"),
         api.get("/courses/enrollments/"),
+        api.get("/courses/programs/"),
+        api.get("/users/profile/"),
       ]);
 
-      setAttendance(attendanceRes.status === "fulfilled" ? attendanceRes.value.data : []);
-      setResults(resultsRes.status === "fulfilled" ? resultsRes.value.data : []);
-      setTimetable(timetableRes.status === "fulfilled" ? timetableRes.value.data : []);
-      setEnrollments(enrollmentRes.status === "fulfilled" ? enrollmentRes.value.data : []);
+      setAttendance(attendanceRes.status === "fulfilled" ? getList(attendanceRes.value.data) : []);
+      setResults(resultsRes.status === "fulfilled" ? getList(resultsRes.value.data) : []);
+      setTimetable(timetableRes.status === "fulfilled" ? getList(timetableRes.value.data) : []);
+      setEnrollments(enrollmentRes.status === "fulfilled" ? getList(enrollmentRes.value.data) : []);
+      setPrograms(programsRes.status === "fulfilled" ? getList(programsRes.value.data) : []);
+      if (profileRes.status === "fulfilled") {
+        setProfile({
+          student_id: profileRes.value.data.student_id || "",
+          level: profileRes.value.data.level || "",
+          address: profileRes.value.data.address || "",
+          program: profileRes.value.data.program || "",
+        });
+      }
 
-      if ([attendanceRes, resultsRes, timetableRes, enrollmentRes].every((entry) => entry.status === "rejected")) {
+      if ([attendanceRes, resultsRes, timetableRes, enrollmentRes, programsRes, profileRes].every((entry) => entry.status === "rejected")) {
         setError("Could not load student records. Please try again.");
       }
 
@@ -41,9 +66,6 @@ export default function StudentViewPage() {
 
     load();
   }, [user]);
-
-  if (!user) return <p>Please sign in.</p>;
-  if (user.role !== "student") return <p>Not authorized.</p>;
 
   const attendanceRate = useMemo(() => {
     if (!attendance.length) return "0.0";
@@ -71,6 +93,28 @@ export default function StudentViewPage() {
     if (byDay !== 0) return byDay;
     return a.start_time.localeCompare(b.start_time);
   });
+
+  const submitProfile = async (event) => {
+    event.preventDefault();
+    setError("");
+    try {
+      const { data } = await api.patch("/users/profile/", {
+        ...profile,
+        program: profile.program || null,
+      });
+      setProfile({
+        student_id: data.student_id || "",
+        level: data.level || "",
+        address: data.address || "",
+        program: data.program || "",
+      });
+    } catch {
+      setError("Could not update profile.");
+    }
+  };
+
+  if (!user) return <p>Please sign in.</p>;
+  if (user.role !== "student") return <p>Not authorized.</p>;
 
   if (loading) {
     return <div className="page role-page"><p>Loading your student records...</p></div>;
@@ -102,6 +146,33 @@ export default function StudentViewPage() {
           <article className="role-metric-card"><h3>{cgpa}</h3><p>Current CGPA</p></article>
           <article className="role-metric-card"><h3>{enrollments.length}</h3><p>Enrolled Courses</p></article>
           <article className="role-metric-card"><h3>{results.length}</h3><p>Published Results</p></article>
+        </section>
+
+        <section className="role-table-card elevated-card">
+          <h2>Profile</h2>
+          <form className="form-grid polished-form" onSubmit={submitProfile}>
+            <label>Student ID
+              <input value={profile.student_id} onChange={(e) => setProfile({ ...profile, student_id: e.target.value })} />
+            </label>
+            <label>Level
+              <input value={profile.level} onChange={(e) => setProfile({ ...profile, level: e.target.value })} />
+            </label>
+            <label>Program
+              <select value={profile.program} onChange={(e) => setProfile({ ...profile, program: e.target.value })}>
+                <option value="">No program selected</option>
+                {programs.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+              </select>
+            </label>
+            <label>Address
+              <input value={profile.address} onChange={(e) => setProfile({ ...profile, address: e.target.value })} />
+            </label>
+            <div className="form-grid">
+              <button type="submit">Update Profile</button>
+              <button type="button" onClick={() => downloadCsv("grades-report.csv", results)}>
+                Download Grade Report
+              </button>
+            </div>
+          </form>
         </section>
 
         <section className="role-table-card elevated-card">

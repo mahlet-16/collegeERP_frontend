@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 import { api } from "../api/client";
 import { useAuth } from "../context/AuthContext";
@@ -7,10 +7,7 @@ import { useAuth } from "../context/AuthContext";
 export default function RegisterUserPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const params = new URLSearchParams(useLocation().search);
-  const defaultRole = params.get("role") || "student";
-
-  const [form, setForm] = useState({ username: "", password: "", first_name: "", last_name: "", email: "", phone: "", role: defaultRole });
+  const [form, setForm] = useState({ username: "", password: "", first_name: "", last_name: "", email: "", phone: "", role: "student" });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
@@ -31,7 +28,7 @@ export default function RegisterUserPage() {
     try {
       await api.post("/users/create/", form);
       setSuccess(`${form.role} account created successfully.`);
-      setForm({ username: "", password: "", first_name: "", last_name: "", email: "", phone: "", role: defaultRole });
+      setForm({ username: "", password: "", first_name: "", last_name: "", email: "", phone: "", role: "student" });
     } catch (err) {
       setError(err.response?.data?.detail || "Failed to create user");
     } finally {
@@ -40,9 +37,7 @@ export default function RegisterUserPage() {
   };
 
   if (!user) return <p>Please sign in.</p>;
-  if (!["registrar", "admin"].includes(user.role)) return <p>Not authorized.</p>;
-
-  const canAssignAdmin = user.role === "admin";
+  if (user.role !== "registrar") return <p>Not authorized.</p>;
 
   return (
     <div className="role-workspace registrar-theme">
@@ -52,7 +47,7 @@ export default function RegisterUserPage() {
           <div>
             <p className="role-page-kicker">Registrar Operations</p>
             <h1>User Registration Center</h1>
-            <p className="role-page-subtitle">Create student, teacher, registrar, and permitted administrative accounts.</p>
+            <p className="role-page-subtitle">Create student and teacher accounts only.</p>
           </div>
           <button type="button" className="role-page-link" onClick={() => navigate("/")}>Back to Dashboard</button>
         </header>
@@ -96,8 +91,6 @@ export default function RegisterUserPage() {
                 <select name="role" value={form.role} onChange={onChange}>
                   <option value="student">Student</option>
                   <option value="teacher">Teacher</option>
-                  <option value="registrar">Registrar</option>
-                  {canAssignAdmin ? <option value="admin">Admin</option> : null}
                 </select>
               </label>
               {error ? <p className="error">{error}</p> : null}
