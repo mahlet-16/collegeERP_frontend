@@ -5,8 +5,8 @@ const THEME_KEY = "erp_theme";
 
 export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState(() => {
-    if (typeof window === "undefined") return "dark";
-    return localStorage.getItem(THEME_KEY) || "dark";
+    if (typeof window === "undefined") return "light";
+    return localStorage.getItem(THEME_KEY) || "light";
   });
 
   useEffect(() => {

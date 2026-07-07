@@ -1,24 +1,23 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { useTheme } from "../context/ThemeContext";
 import logoImage from "../assets/cpu-college-logo.svg";
+import Icon from "./Icons";
 
 const links = [
-  { to: "/", label: "Dashboard", icon: "DB" },
-  { to: "/student/view", label: "Student Portal", icon: "ST", roles: ["student"] },
-  { to: "/teacher/manage", label: "Faculty Workbench", icon: "FC", roles: ["teacher"] },
-  { to: "/registrar/register", label: "Admissions", icon: "AD", roles: ["registrar"] },
-  { to: "/registrar/timetable", label: "Timetable", icon: "TT", roles: ["registrar"] },
-  { to: "/registrar/exams", label: "Exam Scheduling", icon: "EX", roles: ["registrar"] },
-  { to: "/registrar/academics", label: "Academic Structure", icon: "AS", roles: ["registrar"] },
-  { to: "/admin/config", label: "Configuration", icon: "CF", roles: ["admin"] },
-  { to: "/admin/monitor", label: "Monitoring", icon: "MO", roles: ["admin"] },
+  { to: "/", label: "Dashboard", icon: "dashboard" },
+  { to: "/student/view", label: "Student Portal", icon: "students", roles: ["student"] },
+  { to: "/teacher/manage", label: "Faculty Workbench", icon: "teachers", roles: ["teacher"] },
+  { to: "/registrar/register", label: "Admissions", icon: "registrar", roles: ["registrar"] },
+  { to: "/registrar/timetable", label: "Timetable", icon: "timetable", roles: ["registrar"] },
+  { to: "/registrar/exams", label: "Exam Scheduling", icon: "exams", roles: ["registrar"] },
+  { to: "/registrar/academics", label: "Academic Structure", icon: "structure", roles: ["registrar"] },
+  { to: "/admin/config", label: "Configuration", icon: "settings", roles: ["admin"] },
+  { to: "/admin/monitor", label: "Monitoring", icon: "monitoring", roles: ["admin"] },
 ];
 
 export default function Sidebar() {
-  const { user, signOut } = useAuth();
-  const { theme, toggleTheme } = useTheme();
+  const { user } = useAuth();
 
   return (
     <aside className="sidebar">
@@ -41,21 +40,15 @@ export default function Sidebar() {
             .map((item) => (
               <li key={item.to}>
                 <NavLink to={item.to} className={({ isActive }) => (isActive ? "active" : "")}>
-                  <span className="nav-icon">{item.icon}</span>
+                  <span className="nav-icon" title={item.label}>
+                    <Icon name={item.icon} />
+                  </span>
                   {item.label}
                 </NavLink>
               </li>
             ))}
         </ul>
       </nav>
-      <div className="sidebar-footer">
-        <button type="button" className="theme-toggle" onClick={toggleTheme}>
-          {theme === "dark" ? "LIGHT MODE" : "DARK MODE"}
-        </button>
-        <button type="button" className="sidebar-logout" onClick={signOut}>
-          Sign out
-        </button>
-      </div>
     </aside>
   );
 }

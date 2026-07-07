@@ -25,7 +25,21 @@ export default function StudentViewPage() {
   const [timetable, setTimetable] = useState([]);
   const [enrollments, setEnrollments] = useState([]);
   const [programs, setPrograms] = useState([]);
-  const [profile, setProfile] = useState({ student_id: "", level: "", address: "", program: "" });
+  const [success, setSuccess] = useState("");
+  const [profile, setProfile] = useState({
+    first_name: "",
+    last_name: "",
+    email: "",
+    phone: "",
+    address: "",
+    avatar_url: "",
+    student_id: "",
+    level: "",
+    program_name: "",
+    section_name: "",
+    semester_name: "",
+    academic_year_name: "",
+  });
 
   useEffect(() => {
     if (!user) return;
@@ -33,6 +47,7 @@ export default function StudentViewPage() {
     const load = async () => {
       setLoading(true);
       setError("");
+      setSuccess("");
 
       const [attendanceRes, resultsRes, timetableRes, enrollmentRes, programsRes, profileRes] = await Promise.allSettled([
         api.get("/attendance/records/"),
@@ -49,11 +64,20 @@ export default function StudentViewPage() {
       setEnrollments(enrollmentRes.status === "fulfilled" ? getList(enrollmentRes.value.data) : []);
       setPrograms(programsRes.status === "fulfilled" ? getList(programsRes.value.data) : []);
       if (profileRes.status === "fulfilled") {
+        const p = profileRes.value.data;
         setProfile({
-          student_id: profileRes.value.data.student_id || "",
-          level: profileRes.value.data.level || "",
-          address: profileRes.value.data.address || "",
-          program: profileRes.value.data.program || "",
+          first_name: p.first_name || "",
+          last_name: p.last_name || "",
+          email: p.email || "",
+          phone: p.phone || "",
+          address: p.address || "",
+          avatar_url: p.avatar_url || "",
+          student_id: p.student_id || "",
+          level: p.level || "",
+          program_name: p.program_name || "Unassigned",
+          section_name: p.section_name || "Unassigned",
+          semester_name: p.semester_name || "Unassigned",
+          academic_year_name: p.academic_year_name || "Unassigned",
         });
       }
 
@@ -97,19 +121,28 @@ export default function StudentViewPage() {
   const submitProfile = async (event) => {
     event.preventDefault();
     setError("");
+    setSuccess("");
     try {
       const { data } = await api.patch("/users/profile/", {
-        ...profile,
-        program: profile.program || null,
+        first_name: profile.first_name,
+        last_name: profile.last_name,
+        email: profile.email,
+        phone: profile.phone,
+        address: profile.address,
+        avatar_url: profile.avatar_url,
       });
-      setProfile({
-        student_id: data.student_id || "",
-        level: data.level || "",
+      setSuccess("Profile updated successfully!");
+      setProfile((prev) => ({
+        ...prev,
+        first_name: data.first_name || "",
+        last_name: data.last_name || "",
+        email: data.email || "",
+        phone: data.phone || "",
         address: data.address || "",
-        program: data.program || "",
-      });
-    } catch {
-      setError("Could not update profile.");
+        avatar_url: data.avatar_url || "",
+      }));
+    } catch (err) {
+      setError(err.response?.data?.detail || "Could not update profile.");
     }
   };
 
@@ -139,7 +172,8 @@ export default function StudentViewPage() {
           <span className="context-meta">Updated {new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
         </section>
 
-        {error ? <p className="notice">{error}</p> : null}
+        {error ? <p className="error">{error}</p> : null}
+        {success ? <p className="notice">{success}</p> : null}
 
         <section className="role-metric-grid">
           <article className="role-metric-card"><h3>{attendanceRate}%</h3><p>Attendance Rate</p></article>
@@ -148,31 +182,60 @@ export default function StudentViewPage() {
           <article className="role-metric-card"><h3>{results.length}</h3><p>Published Results</p></article>
         </section>
 
-        <section className="role-table-card elevated-card">
-          <h2>Profile</h2>
-          <form className="form-grid polished-form" onSubmit={submitProfile}>
-            <label>Student ID
-              <input value={profile.student_id} onChange={(e) => setProfile({ ...profile, student_id: e.target.value })} />
-            </label>
-            <label>Level
-              <input value={profile.level} onChange={(e) => setProfile({ ...profile, level: e.target.value })} />
-            </label>
-            <label>Program
-              <select value={profile.program} onChange={(e) => setProfile({ ...profile, program: e.target.value })}>
-                <option value="">No program selected</option>
-                {programs.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-              </select>
-            </label>
-            <label>Address
-              <input value={profile.address} onChange={(e) => setProfile({ ...profile, address: e.target.value })} />
-            </label>
-            <div className="form-grid">
-              <button type="submit">Update Profile</button>
-              <button type="button" onClick={() => downloadCsv("grades-report.csv", results)}>
-                Download Grade Report
-              </button>
+        <section className="role-two-col">
+          <article className="role-table-card elevated-card">
+            <h2>Personal Profile</h2>
+            <form className="form-grid polished-form" onSubmit={submitProfile}>
+              <label>First name
+                <input value={profile.first_name} onChange={(e) => setProfile({ ...profile, first_name: e.target.value })} required />
+              </label>
+              <label>Last name
+                <input value={profile.last_name} onChange={(e) => setProfile({ ...profile, last_name: e.target.value })} required />
+              </label>
+              <label>Email
+                <input type="email" value={profile.email} onChange={(e) => setProfile({ ...profile, email: e.target.value })} required />
+              </label>
+              <label>Phone
+                <input value={profile.phone} onChange={(e) => setProfile({ ...profile, phone: e.target.value })} />
+              </label>
+              <label>Address
+                <input value={profile.address} onChange={(e) => setProfile({ ...profile, address: e.target.value })} />
+              </label>
+              <label>Avatar URL
+                <input value={profile.avatar_url} onChange={(e) => setProfile({ ...profile, avatar_url: e.target.value })} placeholder="https://example.com/avatar.jpg" />
+              </label>
+              <div className="button-row">
+                <button type="submit">Update Profile</button>
+                <button type="button" className="secondary-btn" onClick={() => downloadCsv("grades-report.csv", results)}>
+                  Download Grade Report
+                </button>
+              </div>
+            </form>
+          </article>
+
+          <article className="role-table-card elevated-card">
+            <h2>Academic Placement</h2>
+            <div className="form-grid polished-form">
+              <label>Student ID
+                <input value={profile.student_id} disabled />
+              </label>
+              <label>Academic Year
+                <input value={profile.academic_year_name} disabled />
+              </label>
+              <label>Semester
+                <input value={profile.semester_name} disabled />
+              </label>
+              <label>Program
+                <input value={profile.program_name} disabled />
+              </label>
+              <label>Section
+                <input value={profile.section_name} disabled />
+              </label>
+              <label>Year Level
+                <input value={profile.level} disabled />
+              </label>
             </div>
-          </form>
+          </article>
         </section>
 
         <section className="role-table-card elevated-card">

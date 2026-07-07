@@ -4,15 +4,6 @@ import { Link } from "react-router-dom";
 import { api, getList } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 
-function scoreToGrade(mark) {
-  const numeric = Number(mark);
-  if (numeric >= 85) return { grade: "A", gpa: 4.0 };
-  if (numeric >= 75) return { grade: "B", gpa: 3.5 };
-  if (numeric >= 65) return { grade: "C", gpa: 3.0 };
-  if (numeric >= 50) return { grade: "D", gpa: 2.0 };
-  return { grade: "F", gpa: 0.0 };
-}
-
 export default function TeacherManagePage() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -22,8 +13,10 @@ export default function TeacherManagePage() {
   const [attendanceRecords, setAttendanceRecords] = useState([]);
   const [pendingResults, setPendingResults] = useState([]);
   const [timetable, setTimetable] = useState([]);
-  const [form, setForm] = useState({ student: "", course: "", date: "", status: "present", is_draft: false });
+  
+  const [form, setForm] = useState({ student: "", course: "", date: "", status: "present", comment: "", is_draft: false });
   const [resultForm, setResultForm] = useState({ student: "", course: "", mark: "", term: "", is_draft: false });
+  const [editingResultId, setEditingResultId] = useState(null);
 
   const loadData = async () => {
     if (!user) return;
@@ -88,21 +81,77 @@ export default function TeacherManagePage() {
     }, new Map()).values()
   );
 
+  const studentsForCourse = (courseId) => {
+    if (!courseId) return students;
+    return Array.from(
+      enrollments
+        .filter((entry) => String(entry.course) === String(courseId))
+        .reduce((acc, entry) => {
+          if (!acc.has(entry.student)) {
+            acc.set(entry.student, { id: entry.student, name: entry.student_name });
+          }
+          return acc;
+        }, new Map())
+        .values()
+    );
+  };
+
+  const attendanceStudents = studentsForCourse(form.course);
+  const resultStudents = studentsForCourse(resultForm.course);
+
   if (loading) {
     return <div className="page role-page"><p>Loading teacher workspace...</p></div>;
   }
 
-  const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const onChange = (e) => {
+    const next = { ...form, [e.target.name]: e.target.value };
+    if (e.target.name === "course") {
+      next.student = "";
+    }
+    setForm(next);
+  };
+
   const submitAttendance = async (e) => {
     e.preventDefault();
     setNotice("");
     try {
       await api.post("/attendance/records/", form);
-      setForm({ student: "", course: "", date: "", status: "present", is_draft: false });
+      setForm({ student: "", course: "", date: "", status: "present", comment: "", is_draft: false });
       setNotice("Attendance recorded successfully.");
       await loadData();
-    } catch {
-      setNotice("Failed to record attendance.");
+    } catch (err) {
+      setNotice(err.response?.data?.detail || err.response?.data?.non_field_errors?.[0] || "Failed to record attendance.");
+    }
+  };
+
+  const resetResultForm = () => {
+    setResultForm({ student: "", course: "", mark: "", term: "", is_draft: false });
+    setEditingResultId(null);
+  };
+
+  const editResult = (entry) => {
+    setEditingResultId(entry.id);
+    setResultForm({
+      student: entry.student,
+      course: entry.course,
+      mark: entry.mark,
+      term: entry.term,
+      is_draft: entry.is_draft,
+    });
+    setNotice("");
+  };
+
+  const deleteResult = async (entry) => {
+    setNotice("");
+    try {
+      await api.delete(`/results/items/${entry.id}/`);
+      setNotice(`Result for ${entry.student_name} deleted.`);
+      if (editingResultId === entry.id) {
+        resetResultForm();
+      }
+      await loadData();
+    } catch (err) {
+      setNotice(err.response?.data?.detail || "Failed to delete result.");
     }
   };
 
@@ -110,22 +159,25 @@ export default function TeacherManagePage() {
     e.preventDefault();
     setNotice("");
     try {
-      const { grade, gpa } = scoreToGrade(resultForm.mark);
-      await api.post("/results/items/", {
+      const payload = {
         student: resultForm.student,
         course: resultForm.course,
         mark: resultForm.mark,
-        grade,
-        gpa,
         term: resultForm.term,
         is_draft: resultForm.is_draft,
         published: false,
-      });
-      setResultForm({ student: "", course: "", mark: "", term: "", is_draft: false });
-      setNotice("Result submitted for registrar/admin publication.");
+      };
+      if (editingResultId) {
+        await api.patch(`/results/items/${editingResultId}/`, payload);
+        setNotice("Result updated successfully.");
+      } else {
+        await api.post("/results/items/", payload);
+        setNotice("Result submitted for registrar/admin publication.");
+      }
+      resetResultForm();
       await loadData();
-    } catch {
-      setNotice("Failed to enter result.");
+    } catch (err) {
+      setNotice(err.response?.data?.detail || err.response?.data?.non_field_errors?.[0] || "Failed to save result.");
     }
   };
 
@@ -170,7 +222,7 @@ export default function TeacherManagePage() {
               <label>Student
                 <select name="student" value={form.student} onChange={onChange} required>
                   <option value="">--select--</option>
-                  {students.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  {attendanceStudents.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select>
               </label>
               <label>Date<input name="date" type="date" value={form.date} onChange={onChange} required /></label>
@@ -181,6 +233,9 @@ export default function TeacherManagePage() {
                   <option value="late">Late</option>
                   <option value="excused">Excused</option>
                 </select>
+              </label>
+              <label>Comment
+                <input name="comment" value={form.comment} onChange={onChange} placeholder="Optional attendance note" />
               </label>
               <label>
                 Draft
@@ -200,7 +255,7 @@ export default function TeacherManagePage() {
                 <select
                   name="course"
                   value={resultForm.course}
-                  onChange={(e) => setResultForm({ ...resultForm, course: e.target.value })}
+                  onChange={(e) => setResultForm({ ...resultForm, course: e.target.value, student: "" })}
                   required
                 >
                   <option value="">--select--</option>
@@ -215,7 +270,7 @@ export default function TeacherManagePage() {
                   required
                 >
                   <option value="">--select--</option>
-                  {students.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  {resultStudents.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select>
               </label>
               <label>Mark
@@ -245,7 +300,10 @@ export default function TeacherManagePage() {
                   <option value="true">Save Draft</option>
                 </select>
               </label>
-              <button type="submit">{resultForm.is_draft ? "Save Draft" : "Submit Result"}</button>
+              <div className="button-row">
+                <button type="submit">{editingResultId ? (resultForm.is_draft ? "Update Draft" : "Update Result") : (resultForm.is_draft ? "Save Draft" : "Submit Result")}</button>
+                {editingResultId ? <button type="button" className="secondary-btn" onClick={resetResultForm}>Cancel Edit</button> : null}
+              </div>
             </form>
           </article>
         </section>
@@ -255,7 +313,7 @@ export default function TeacherManagePage() {
           <div className="table-wrap">
             <table className="pro-table">
               <thead>
-                <tr><th>Student</th><th>Course</th><th>Term</th><th>Grade</th><th>Mark</th><th>Status</th></tr>
+                <tr><th>Student</th><th>Course</th><th>Term</th><th>Grade</th><th>Mark</th><th>Status</th><th>Actions</th></tr>
               </thead>
               <tbody>
                 {pendingResults.map((entry) => (
@@ -266,9 +324,15 @@ export default function TeacherManagePage() {
                     <td>{entry.grade}</td>
                     <td>{entry.mark}</td>
                     <td>{entry.is_draft ? "Draft" : "Submitted"}</td>
+                    <td>
+                      <div className="table-actions">
+                        <button type="button" className="tiny-btn" onClick={() => editResult(entry)}>Edit</button>
+                        <button type="button" className="tiny-btn danger-btn" onClick={() => deleteResult(entry)}>Delete</button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
-                {!pendingResults.length ? <tr><td colSpan="6">No pending results at the moment.</td></tr> : null}
+                {!pendingResults.length ? <tr><td colSpan="7">No pending results at the moment.</td></tr> : null}
               </tbody>
             </table>
           </div>
