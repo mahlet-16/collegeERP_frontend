@@ -54,12 +54,14 @@ export default function Layout({ children }) {
     return () => clearInterval(interval);
   }, [user]);
 
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent("erp:notifications-updated", { detail: notifications }));
+  }, [notifications]);
+
   const handleMarkRead = async (id) => {
     try {
       await api.post(`/users/notifications/${id}/mark_read/`);
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, read: true } : n))
-      );
+      setNotifications((prev) => prev.filter((n) => n.id !== id));
       setPrevUnreadIds((prev) => {
         const next = new Set(prev);
         next.delete(id);
@@ -83,8 +85,9 @@ export default function Layout({ children }) {
     const unread = notifications.filter((n) => !n.read);
     try {
       await Promise.all(unread.map((n) => api.post(`/users/notifications/${n.id}/mark_read/`)));
-      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+      setNotifications([]);
       setPrevUnreadIds(new Set());
+      setDropdownOpen(false);
     } catch (err) {
       console.error("Failed to mark all as read", err);
     }
@@ -135,13 +138,13 @@ export default function Layout({ children }) {
                     )}
                   </div>
                   <div className="notification-list">
-                    {notifications.length === 0 ? (
-                      <div className="notification-empty">No notifications</div>
+                    {notifications.filter((n) => !n.read).length === 0 ? (
+                      <div className="notification-empty">No new notifications</div>
                     ) : (
-                      notifications.slice(0, 10).map((n) => (
+                      notifications.filter((n) => !n.read).slice(0, 10).map((n) => (
                         <div
                           key={n.id}
-                          className={`notification-item ${!n.read ? "unread" : ""}`}
+                          className="notification-item unread"
                           onClick={() => handleOpenNotification(n)}
                         >
                           <div className="notification-item-title">{n.title}</div>

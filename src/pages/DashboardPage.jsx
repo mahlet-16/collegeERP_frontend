@@ -254,6 +254,17 @@ export default function DashboardPage() {
     });
   }, [role, user?.id]);
 
+  useEffect(() => {
+    const handleNotificationsUpdate = (e) => {
+      setRecords((prev) => ({
+        ...prev,
+        notifications: e.detail,
+      }));
+    };
+    window.addEventListener("erp:notifications-updated", handleNotificationsUpdate);
+    return () => window.removeEventListener("erp:notifications-updated", handleNotificationsUpdate);
+  }, []);
+
   const publishResult = async (resultId) => {
     setNotice("");
     try {

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../context/AuthContext";
+import { getApiBaseUrl, api } from "../api/client";
 
 function LoginPage() {
   const navigate = useNavigate();
@@ -13,12 +14,23 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  
+  const [showSettings, setShowSettings] = useState(false);
+  const [apiUrl, setApiUrl] = useState(getApiBaseUrl());
 
   useEffect(() => {
     if (isAuthenticated) {
       navigate("/", { replace: true });
     }
   }, [isAuthenticated, navigate]);
+
+  const saveSettings = (e) => {
+    e.preventDefault();
+    localStorage.setItem("erp_api_base_url", apiUrl);
+    api.defaults.baseURL = apiUrl;
+    setShowSettings(false);
+    alert("Connection settings saved! Please try logging in again.");
+  };
 
   const onSubmit = async (event) => {
     event.preventDefault();
@@ -28,7 +40,7 @@ function LoginPage() {
       await signIn(username, password);
       navigate(from, { replace: true });
     } catch {
-      setError("Login failed. Verify your username and password.");
+      setError("Login failed. Verify your username and password, or check the connection settings.");
     } finally {
       setSubmitting(false);
     }
@@ -70,6 +82,60 @@ function LoginPage() {
               {submitting ? "Authenticating..." : "Sign In"}
             </button>
           </form>
+          
+          <div className="login-settings" style={{ textAlign: "center", marginTop: "1rem" }}>
+            <button
+              type="button"
+              className="settings-toggle-btn"
+              onClick={() => setShowSettings(!showSettings)}
+              style={{
+                background: "none",
+                border: "none",
+                color: "var(--muted)",
+                fontSize: "0.8rem",
+                textDecoration: "underline",
+                cursor: "pointer",
+              }}
+            >
+              {showSettings ? "Hide Connection Settings" : "Configure API Connection"}
+            </button>
+            {showSettings && (
+              <form onSubmit={saveSettings} style={{ marginTop: "0.75rem", display: "flex", flexDirection: "column", gap: "0.5rem", width: "100%" }}>
+                <label style={{ fontSize: "0.78rem", color: "var(--muted)", textAlign: "left", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                  Backend API Base URL:
+                  <input
+                    value={apiUrl}
+                    onChange={(e) => setApiUrl(e.target.value)}
+                    placeholder="https://college-erp-backend.onrender.com/api"
+                    required
+                    style={{
+                      padding: "0.4rem",
+                      fontSize: "0.8rem",
+                      borderRadius: "var(--radius-sm)",
+                      border: "1px solid var(--border)",
+                      backgroundColor: "var(--surface-strong)",
+                      color: "var(--text)"
+                    }}
+                  />
+                </label>
+                <button
+                  type="submit"
+                  style={{
+                    padding: "0.4rem",
+                    fontSize: "0.8rem",
+                    fontWeight: "bold",
+                    backgroundColor: "var(--role-primary)",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "var(--radius-sm)",
+                    cursor: "pointer"
+                  }}
+                >
+                  Save API Settings
+                </button>
+              </form>
+            )}
+          </div>
         </div>
 
         <div className="login-footnote">

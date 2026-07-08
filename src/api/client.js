@@ -1,10 +1,11 @@
 import axios from "axios";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api";
+export function getApiBaseUrl() {
+  return localStorage.getItem("erp_api_base_url") || import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api";
+}
 
 export const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: getApiBaseUrl(),
 });
 
 export function getList(payload) {
@@ -36,7 +37,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && refresh && !originalRequest._retry) {
       originalRequest._retry = true;
       try {
-        const { data } = await axios.post(`${API_BASE_URL}/token/refresh/`, { refresh });
+        const { data } = await axios.post(`${getApiBaseUrl()}/token/refresh/`, { refresh });
         localStorage.setItem("access_token", data.access);
         originalRequest.headers.Authorization = `Bearer ${data.access}`;
         return api(originalRequest);
