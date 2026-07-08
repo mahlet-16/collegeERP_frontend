@@ -1120,6 +1120,46 @@ button[type="submit"]:active,
   font-weight: 700;
 }
 
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .app-shell {
+    flex-direction: column;
+  }
+
+  .top-nav {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 1rem;
+    gap: 1rem;
+  }
+
+  .top-nav-brand {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .top-nav-brand .eyebrow {
+    display: none;
+  }
+
+  .top-nav-brand h1 {
+    font-size: 1.25rem;
+  }
+
+  .top-actions {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 0.5rem;
+  }
+
+  .top-chip {
+    padding: 0.4rem 0.75rem;
+    text-align: left;
+    flex: 1;
+    min-width: 110px;
+  }
+}
 /* Empty states */
 .empty-state {
   display: flex;
