@@ -46,6 +46,7 @@ export default function RegistrarAcademicPage() {
   const [notice, setNotice] = useState("");
   const [query, setQuery] = useState("");
   const [filterSection, setFilterSection] = useState("");
+  const [enrollSection, setEnrollSection] = useState("");
   const [visibleCourses, setVisibleCourses] = useState([]);
   const [visibleSections, setVisibleSections] = useState([]);
   const [visibleEnrollments, setVisibleEnrollments] = useState([]);
@@ -246,45 +247,8 @@ export default function RegistrarAcademicPage() {
         {notice ? <p className="notice">{notice}</p> : null}
 
         <section className="role-two-col">
-          <article className="role-table-card hierarchy-panel">
-            <div className="section-heading">
-              <Icon name="structure" />
-              <div>
-                <h2>Hierarchy Tree</h2>
-                <span>College to section delivery map</span>
-              </div>
-            </div>
-            <div className="hierarchy-tree">
-              {hierarchy.map((department) => (
-                <div className="tree-node tree-department" key={department.id}>
-                  <strong>{department.name}</strong>
-                  <span>{department.programs.length} programs</span>
-                  {department.programs.map((program) => (
-                    <div className="tree-node tree-program" key={program.id}>
-                      <strong>{program.name}</strong>
-                      <span>{program.sections.length} sections</span>
-                      {program.sections.map((section) => (
-                        <div className="tree-node tree-section" key={section.id}>
-                          <button type="button" onClick={() => setFilterSection(String(section.id))}>{section.label || section.name}</button>
-                          <span>{section.courses.length} courses</span>
-                        </div>
-                      ))}
-                    </div>
-                  ))}
-                </div>
-              ))}
-              {!hierarchy.length ? <div className="empty-state"><strong>No structure yet</strong><span>Create a department and program to begin.</span></div> : null}
-            </div>
-          </article>
-
           <article className="role-table-card">
-            <div className="section-heading">
-              <Icon name="sections" />
-              <div>
-                <h2>Sections</h2>
-                <span>Student cohorts and delivery groups</span>
-              </div>
-            </div>
+            <h2>Create & Manage Sections</h2>
             <form className="form-grid polished-form compact-form" onSubmit={(event) => createResource(event, "section", "/courses/sections/", emptySection, "Section created.")}>
               <select value={forms.section.program} onChange={(event) => setForm("section", { program: event.target.value })} required>
                 <option value="">Program</option>
@@ -312,37 +276,6 @@ export default function RegistrarAcademicPage() {
               ))}
             </div>
           </article>
-        </section>
-
-        <section className="role-two-col">
-          <article className="role-table-card">
-            <h2>Create Department, Program, Year</h2>
-            <form className="form-grid polished-form compact-form" onSubmit={(event) => createResource(event, "department", "/courses/departments/", emptyDepartment, "Department created.")}>
-              <input value={forms.department.name} onChange={(event) => setForm("department", { name: event.target.value })} placeholder="Department name" required />
-              <button type="submit">Create Department</button>
-            </form>
-            <form className="form-grid polished-form compact-form" onSubmit={(event) => createResource(event, "program", "/courses/programs/", emptyProgram, "Program created.")}>
-              <input value={forms.program.name} onChange={(event) => setForm("program", { name: event.target.value })} placeholder="Program name" required />
-              <select value={forms.program.department} onChange={(event) => setForm("program", { department: event.target.value })} required>
-                <option value="">Department</option>
-                {data.departments.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-              </select>
-              <button type="submit">Create Program</button>
-            </form>
-            <form className="form-grid polished-form compact-form" onSubmit={(event) => createResource(event, "year", "/courses/academic-years/", emptyYear, "Academic year created.")}>
-              <input value={forms.year.name} onChange={(event) => setForm("year", { name: event.target.value })} placeholder="Academic year" required />
-              <button type="submit">Create Year</button>
-            </form>
-            <form className="form-grid polished-form compact-form" onSubmit={(event) => createResource(event, "semester", "/courses/semesters/", emptySemester, "Semester created.")}>
-              <input value={forms.semester.name} onChange={(event) => setForm("semester", { name: event.target.value })} placeholder="Semester name" required />
-              <select value={forms.semester.academic_year} onChange={(event) => setForm("semester", { academic_year: event.target.value })} required>
-                <option value="">Academic year</option>
-                {data.years.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-              </select>
-              <input type="number" min="1" value={forms.semester.number} onChange={(event) => setForm("semester", { number: event.target.value })} />
-              <button type="submit">Create Semester</button>
-            </form>
-          </article>
 
           <article className="role-table-card">
             <h2>Classrooms</h2>
@@ -369,6 +302,40 @@ export default function RegistrarAcademicPage() {
 
         <section className="role-two-col">
           <article className="role-table-card">
+            <h2>Create Department, Program, Year</h2>
+            <form className="form-grid polished-form compact-form" onSubmit={(event) => createResource(event, "department", "/courses/departments/", emptyDepartment, "Department created.")}>
+              <input value={forms.department.name} onChange={(event) => setForm("department", { name: event.target.value })} placeholder="Department name" required />
+              <button type="submit">Create Department</button>
+            </form>
+            <form className="form-grid polished-form compact-form" onSubmit={(event) => createResource(event, "program", "/courses/programs/", emptyProgram, "Program created.")}>
+              <select value={forms.program.name} onChange={(event) => setForm("program", { name: event.target.value })} required>
+                <option value="">Program name</option>
+                <option value="Regular">Regular</option>
+                <option value="Weekend">Weekend</option>
+                <option value="Extension">Extension</option>
+              </select>
+              <select value={forms.program.department} onChange={(event) => setForm("program", { department: event.target.value })} required>
+                <option value="">Department</option>
+                {data.departments.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+              </select>
+              <button type="submit">Create Program</button>
+            </form>
+            <form className="form-grid polished-form compact-form" onSubmit={(event) => createResource(event, "year", "/courses/academic-years/", emptyYear, "Academic year created.")}>
+              <input value={forms.year.name} onChange={(event) => setForm("year", { name: event.target.value })} placeholder="Academic year" required />
+              <button type="submit">Create Year</button>
+            </form>
+            <form className="form-grid polished-form compact-form" onSubmit={(event) => createResource(event, "semester", "/courses/semesters/", emptySemester, "Semester created.")}>
+              <input value={forms.semester.name} onChange={(event) => setForm("semester", { name: event.target.value })} placeholder="Semester name" required />
+              <select value={forms.semester.academic_year} onChange={(event) => setForm("semester", { academic_year: event.target.value })} required>
+                <option value="">Academic year</option>
+                {data.years.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+              </select>
+              <input type="number" min="1" value={forms.semester.number} onChange={(event) => setForm("semester", { number: event.target.value })} />
+              <button type="submit">Create Semester</button>
+            </form>
+          </article>
+
+          <article className="role-table-card">
             <h2>Create Course</h2>
             <form className="form-grid polished-form" onSubmit={(event) => createResource(event, "course", "/courses/items/", emptyCourse, "Course created.", (value) => ({ ...value, program: value.program || null, section: value.section || null, semester: value.semester || null, teacher: value.teacher || null }))}>
               <input value={forms.course.code} onChange={(event) => setForm("course", { code: event.target.value })} placeholder="Course code" required />
@@ -388,17 +355,30 @@ export default function RegistrarAcademicPage() {
               <button type="submit">Create Course</button>
             </form>
           </article>
+        </section>
 
+        <section className="role-two-col">
           <article className="role-table-card">
             <h2>Enroll Student</h2>
             <form className="form-grid polished-form" onSubmit={(event) => createResource(event, "enrollment", "/courses/enrollments/", emptyEnrollment, "Student enrolled.")}>
-              <select value={forms.enrollment.student} onChange={(event) => setForm("enrollment", { student: event.target.value })} required>
-                <option value="">Student</option>
-                {data.students.map((item) => <option key={item.id} value={item.id}>{optionLabel(item)} {item.section_name ? `· ${item.section_name}` : ""}</option>)}
+              <select value={enrollSection} onChange={(event) => {
+                setEnrollSection(event.target.value);
+                setForm("enrollment", { student: "", course: "" });
+              }}>
+                <option value="">Select Section</option>
+                {data.sections.map((item) => <option key={item.id} value={item.id}>{item.label || item.name}</option>)}
               </select>
-              <select value={forms.enrollment.course} onChange={(event) => setForm("enrollment", { course: event.target.value })} required>
+              <select value={forms.enrollment.student} onChange={(event) => setForm("enrollment", { student: event.target.value })} required disabled={!enrollSection}>
+                <option value="">Student</option>
+                {data.students
+                  .filter((s) => String(s.section) === String(enrollSection))
+                  .map((item) => <option key={item.id} value={item.id}>{optionLabel(item)}</option>)}
+              </select>
+              <select value={forms.enrollment.course} onChange={(event) => setForm("enrollment", { course: event.target.value })} required disabled={!enrollSection}>
                 <option value="">Course</option>
-                {coursesForEnrollment.map((item) => <option key={item.id} value={item.id}>{item.code} · {item.section_name}</option>)}
+                {data.courses
+                  .filter((c) => String(c.section) === String(enrollSection))
+                  .map((item) => <option key={item.id} value={item.id}>{item.code} · {item.name}</option>)}
               </select>
               <input value={forms.enrollment.term} onChange={(event) => setForm("enrollment", { term: event.target.value })} placeholder="Term" required />
               <button type="submit">Create Enrollment</button>

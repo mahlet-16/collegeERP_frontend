@@ -254,6 +254,20 @@ export default function DashboardPage() {
     });
   }, [role, user?.id]);
 
+  const publishResult = async (resultId) => {
+    setNotice("");
+    try {
+      await api.post(`/results/items/${resultId}/publish/`);
+      setNotice("Result approved and published successfully.");
+      setRecords((prev) => ({
+        ...prev,
+        results: prev.results.map((r) => (r.id === resultId ? { ...r, published: true } : r)),
+      }));
+    } catch (err) {
+      setNotice(err.response?.data?.detail || "Failed to publish result.");
+    }
+  };
+
   const courseIdsForUser = useMemo(() => {
     if (role === "student") {
       return new Set(records.enrollments.map((item) => item.course));
@@ -330,6 +344,39 @@ export default function DashboardPage() {
   const resultRows = visibleResults.filter((item) => matchesQuery(item, query));
   const attendanceRows = visibleAttendance.filter((item) => matchesQuery(item, query));
   const userRows = records.users.filter((item) => matchesQuery(item, query));
+
+  const resultColumns = useMemo(() => {
+    const cols = [
+      { key: "term", label: "Term" },
+      { key: "course_code", label: "Course" },
+      { key: "student_name", label: "Student" },
+      { key: "grade", label: "Grade" },
+      { key: "published", label: "Status", render: (row) => (row.published ? "Published" : row.is_draft ? "Draft" : "Pending") },
+    ];
+    if (role === "registrar") {
+      cols.push({
+        key: "actions",
+        label: "Actions",
+        render: (row) => {
+          if (row.published) {
+            return <span style={{ color: "var(--success, #2e7d32)", fontWeight: "bold" }}>Published</span>;
+          }
+          if (row.is_draft) {
+            return <span style={{ color: "var(--muted)", fontStyle: "italic" }}>Teacher Draft</span>;
+          }
+          return (
+            <button
+              className="tiny-btn success-btn"
+              onClick={() => publishResult(row.id)}
+            >
+              Approve & Publish
+            </button>
+          );
+        }
+      });
+    }
+    return cols;
+  }, [role]);
 
   if (loading) return <LoadingSkeleton />;
 
@@ -433,32 +480,28 @@ export default function DashboardPage() {
             { key: "status", label: "Status" },
           ]}
         />
-      ) : (
+      ) : role === "admin" ? null : (
         <PaginatedTable
           title={role === "student" ? "Published Result Ledger" : "Result Publication Queue"}
           rows={resultRows}
-          columns={[
-            { key: "term", label: "Term" },
-            { key: "course_code", label: "Course" },
-            { key: "student_name", label: "Student" },
-            { key: "grade", label: "Grade" },
-            { key: "published", label: "Status", render: (row) => (row.published ? "Published" : row.is_draft ? "Draft" : "Pending") },
-          ]}
+          columns={resultColumns}
         />
       )}
 
-      <PaginatedTable
-        title="Timetable Board"
-        rows={timetableRows}
-        columns={[
-          { key: "day", label: "Day" },
-          { key: "start_time", label: "Start" },
-          { key: "end_time", label: "End" },
-          { key: "course_code", label: "Course" },
-          { key: "room", label: "Room" },
-          { key: "published", label: "State", render: (row) => (row.published ? "Published" : "Draft") },
-        ]}
-      />
+      {role === "admin" ? null : (
+        <PaginatedTable
+          title="Timetable Board"
+          rows={timetableRows}
+          columns={[
+            { key: "day", label: "Day" },
+            { key: "start_time", label: "Start" },
+            { key: "end_time", label: "End" },
+            { key: "course_code", label: "Course" },
+            { key: "room", label: "Room" },
+            { key: "published", label: "State", render: (row) => (row.published ? "Published" : "Draft") },
+          ]}
+        />
+      )}
     </div>
   );
 }

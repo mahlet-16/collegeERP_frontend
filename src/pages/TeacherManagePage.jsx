@@ -14,8 +14,8 @@ export default function TeacherManagePage() {
   const [pendingResults, setPendingResults] = useState([]);
   const [timetable, setTimetable] = useState([]);
   
-  const [form, setForm] = useState({ student: "", course: "", date: "", status: "present", comment: "", is_draft: false });
-  const [resultForm, setResultForm] = useState({ student: "", course: "", mark: "", term: "", is_draft: false });
+  const [form, setForm] = useState({ section: "", student: "", course: "", date: "", status: "present", comment: "", is_draft: false });
+  const [resultForm, setResultForm] = useState({ section: "", student: "", course: "", mark: "", term: "", is_draft: false });
   const [editingResultId, setEditingResultId] = useState(null);
 
   const loadData = async () => {
@@ -72,6 +72,51 @@ export default function TeacherManagePage() {
   if (!user) return <p>Please sign in.</p>;
   if (user.role !== "teacher") return <p>Not authorized.</p>;
 
+  const sections = Array.from(
+    courses.reduce((acc, c) => {
+      if (c.section && !acc.has(c.section)) {
+        acc.set(c.section, { id: c.section, name: c.section_name });
+      }
+      return acc;
+    }, new Map()).values()
+  );
+
+  const filteredCoursesForAttendance = form.section
+    ? courses.filter((c) => String(c.section) === String(form.section))
+    : [];
+
+  const filteredCoursesForResult = resultForm.section
+    ? courses.filter((c) => String(c.section) === String(resultForm.section))
+    : [];
+
+  const attendanceStudents = form.course
+    ? Array.from(
+        enrollments
+          .filter((e) => String(e.course) === String(form.course))
+          .reduce((acc, e) => {
+            if (!acc.has(e.student)) {
+              acc.set(e.student, { id: e.student, name: e.student_name });
+            }
+            return acc;
+          }, new Map())
+          .values()
+      )
+    : [];
+
+  const resultStudents = resultForm.course
+    ? Array.from(
+        enrollments
+          .filter((e) => String(e.course) === String(resultForm.course))
+          .reduce((acc, e) => {
+            if (!acc.has(e.student)) {
+              acc.set(e.student, { id: e.student, name: e.student_name });
+            }
+            return acc;
+          }, new Map())
+          .values()
+      )
+    : [];
+
   const students = Array.from(
     enrollments.reduce((acc, entry) => {
       if (!acc.has(entry.student)) {
@@ -81,31 +126,16 @@ export default function TeacherManagePage() {
     }, new Map()).values()
   );
 
-  const studentsForCourse = (courseId) => {
-    if (!courseId) return students;
-    return Array.from(
-      enrollments
-        .filter((entry) => String(entry.course) === String(courseId))
-        .reduce((acc, entry) => {
-          if (!acc.has(entry.student)) {
-            acc.set(entry.student, { id: entry.student, name: entry.student_name });
-          }
-          return acc;
-        }, new Map())
-        .values()
-    );
-  };
-
-  const attendanceStudents = studentsForCourse(form.course);
-  const resultStudents = studentsForCourse(resultForm.course);
-
   if (loading) {
     return <div className="page role-page"><p>Loading teacher workspace...</p></div>;
   }
 
   const onChange = (e) => {
     const next = { ...form, [e.target.name]: e.target.value };
-    if (e.target.name === "course") {
+    if (e.target.name === "section") {
+      next.course = "";
+      next.student = "";
+    } else if (e.target.name === "course") {
       next.student = "";
     }
     setForm(next);
@@ -115,8 +145,16 @@ export default function TeacherManagePage() {
     e.preventDefault();
     setNotice("");
     try {
-      await api.post("/attendance/records/", form);
-      setForm({ student: "", course: "", date: "", status: "present", comment: "", is_draft: false });
+      const payload = {
+        student: form.student,
+        course: form.course,
+        date: form.date,
+        status: form.status,
+        comment: form.comment,
+        is_draft: form.is_draft,
+      };
+      await api.post("/attendance/records/", payload);
+      setForm({ section: "", student: "", course: "", date: "", status: "present", comment: "", is_draft: false });
       setNotice("Attendance recorded successfully.");
       await loadData();
     } catch (err) {
@@ -125,7 +163,7 @@ export default function TeacherManagePage() {
   };
 
   const resetResultForm = () => {
-    setResultForm({ student: "", course: "", mark: "", term: "", is_draft: false });
+    setResultForm({ section: "", student: "", course: "", mark: "", term: "", is_draft: false });
     setEditingResultId(null);
   };
 
@@ -213,14 +251,20 @@ export default function TeacherManagePage() {
           <article className="role-table-card elevated-card">
             <h2>Enter Attendance</h2>
             <form className="form-grid polished-form" onSubmit={submitAttendance}>
-              <label>Course
-                <select name="course" value={form.course} onChange={onChange} required>
+              <label>Section
+                <select name="section" value={form.section} onChange={onChange} required>
                   <option value="">--select--</option>
-                  {courses.map((c) => <option key={c.id} value={c.id}>{c.code} - {c.name}</option>)}
+                  {sections.map((sec) => <option key={sec.id} value={sec.id}>{sec.name}</option>)}
+                </select>
+              </label>
+              <label>Course
+                <select name="course" value={form.course} onChange={onChange} required disabled={!form.section}>
+                  <option value="">--select--</option>
+                  {filteredCoursesForAttendance.map((c) => <option key={c.id} value={c.id}>{c.code} - {c.name}</option>)}
                 </select>
               </label>
               <label>Student
-                <select name="student" value={form.student} onChange={onChange} required>
+                <select name="student" value={form.student} onChange={onChange} required disabled={!form.course}>
                   <option value="">--select--</option>
                   {attendanceStudents.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select>
@@ -251,15 +295,27 @@ export default function TeacherManagePage() {
           <article className="role-table-card elevated-card">
             <h2>Enter Grades</h2>
             <form className="form-grid polished-form" onSubmit={submitResult}>
+              <label>Section
+                <select
+                  name="section"
+                  value={resultForm.section}
+                  onChange={(e) => setResultForm({ ...resultForm, section: e.target.value, course: "", student: "" })}
+                  required
+                >
+                  <option value="">--select--</option>
+                  {sections.map((sec) => <option key={sec.id} value={sec.id}>{sec.name}</option>)}
+                </select>
+              </label>
               <label>Course
                 <select
                   name="course"
                   value={resultForm.course}
                   onChange={(e) => setResultForm({ ...resultForm, course: e.target.value, student: "" })}
                   required
+                  disabled={!resultForm.section}
                 >
                   <option value="">--select--</option>
-                  {courses.map((c) => <option key={c.id} value={c.id}>{c.code} - {c.name}</option>)}
+                  {filteredCoursesForResult.map((c) => <option key={c.id} value={c.id}>{c.code} - {c.name}</option>)}
                 </select>
               </label>
               <label>Student
@@ -268,6 +324,7 @@ export default function TeacherManagePage() {
                   value={resultForm.student}
                   onChange={(e) => setResultForm({ ...resultForm, student: e.target.value })}
                   required
+                  disabled={!resultForm.course}
                 >
                   <option value="">--select--</option>
                   {resultStudents.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
